@@ -1,0 +1,111 @@
+###  MyBatis-Plus主键策略
+    在实体主键添加 @TableId(type = IdType.ASSIGN_ID) 注解
+    在进行Insert[插入]操作时如未填写ID字段 MBP自动获取一个19位不唯一ID进行插入
+
+###  MyBatis-Plus自动填充
+    1.在项目下创建handler包 新建MyMateObjectHandler实现MetaObjectHandler类的insertFill updateFill方法(给类添加@Component)
+        @Component
+        public class MyMateObjectHandler implements MetaObjectHandler {
+
+            //MBP执行添加操作
+            @Override
+            public void insertFill(MetaObject metaObject) {
+                this.setFieldValByName("createTime",new Date(),metaObject);
+                this.setFieldValByName("updateTime",new Date(),metaObject);
+            }
+
+            @Override
+            public void updateFill(MetaObject metaObject) {
+                this.setFieldValByName("updateTime",new Date(),metaObject);
+            }
+        }
+
+    2.在实体create_time、update_time上分别添加@TableField(fill = FieldFill.INSERT) @TableField(fill = FieldFill.INSERT_UPDATE)
+
+###  MyBatis-Plus乐观锁
+    1.在数据表中添加version(int)字段
+    2.给实体类添加version属性并添加@Version、@TableField(fill = FieldFill.INSERT)注解
+        在handler包下MyMateObjectHandler的insertFill添加
+        this.setFieldValByName("version",1,metaObject);
+    3.配置乐观锁插件
+        3.1在config包下创建mybatisplusConfig
+        @Configuration
+        @MapperScan("com.xxxx.mybatisplusdemo.mapper")
+        public class mybatisplusConfig {
+            //乐观锁配置插件
+            @Bean
+            public OptimisticLockerInterceptor optimisticLockerInterceptor(){
+                return new OptimisticLockerInterceptor();
+            }
+        }
+
+### MyBatis-Plus查询
+    ##  批量查询
+        List<User> users = xxxMapper.selectBatchIds(Arrays.asList(id1,id2,id3,....,idn));
+    ##  条件查询(了解)
+        Map<String,Object> map = new HahsMap<>();
+        map.put("属性名"，"属性值"); * N
+        List<User> users = xxxMapper.selectByMap(map);
+    ##  分页查询(需配置插件)[常见]
+        1.1 配置分页插件
+            在config包下配置mybatisplusConfig的分页插件
+            //分页查询插件
+                @Bean
+                public PaginationInterceptor paginationInterceptor(){
+                    return new PaginationInterceptor();
+                }
+        1.2 实现代码
+            Page<User> page = new Page(1,3);
+            Page userPage = userMapper.selectPage(page,null);
+            long pages = userPage.getPages(); //总页数
+            long current = userPage.getCurrent(); //当前页
+            List records = userPage.getRecords(); //查询数据的集合
+            long total = userPage.getTotal(); //总记录数
+            boolean hasNext = userPage.hasNext(); //是否有下一页
+            boolean hasPrevious = userPage.hasPrevious(); //是否有上一页
+
+### MyBatis-Plus删除
+    ## 根据Id删除
+        userMapper.deleteById("66L");
+    ## 批量删除
+        userMapper.deleteBatchIds(Arrays.asList(66,67));
+    ##  条件删除
+        Map<String,Object> map = new HahsMap<>();
+        map.put("属性名"，"属性值"); * N
+        List<User> users = xxxMapper.DeleteByMap(map);
+    ##  逻辑删除
+        1.1 给数据表和实体类添加对应字段(delete int)(private Integer deleted)
+        1.2 给实体属性添加@TableLogic(删除标记) @TableField(fill = FieldFill.INSERT)(插入时初始化)注解
+            在Handler包下MyMateObjectHandler中添加
+            this.setFieldValByName("deleted",0,metaObject);
+
+
+### MyBatis-PlusQuery复杂操作
+    ##  //ge(大等)   gt(大于)   le(小等)   lt(小于)  参数一:字段名称 参数二:属性值
+        QueryWrapper queryWrapper = new QueryWrapper<User>();
+        queryWrapper.ge("age",21);
+        List<User> users = userMapper.selectList(queryWrapper);
+        System.out.println(users);
+    ##  //eq(等于)   ne(不等于)  参数一:字段名称 参数二:属性值
+        QueryWrapper queryWrapper = new QueryWrapper<User>();
+        queryWrapper.eq("name","tom");
+        List<User> users = userMapper.selectList(queryWrapper);
+        System.out.println(users);
+    ##  //between(在某区间)   notbetween(不在某区间)  参数一:字段名称 参数二:区间左边界 参数三:区间右边界
+        QueryWrapper queryWrapper = new QueryWrapper<User>();
+        queryWrapper.between("age",24,28);
+        List<User> users = userMapper.selectList(queryWrapper);
+        System.out.println(users);
+    ##  //like(模糊查询%张%)   notlike(模糊查询%张%)   likeleft(模糊查询%张)   likeright(模糊查询张%)  参数一:字段名称 参数二:属性值
+        QueryWrapper queryWrapper = new QueryWrapper<User>();
+        queryWrapper.like("name","张");
+        List<User> users = userMapper.selectList(queryWrapper);
+        System.out.println(users);
+    ##  //orderby orderbydesc(降序排列)   orderbyasc(升序排列)
+        QueryWrapper queryWrapper = new QueryWrapper<User>();
+        queryWrapper.orderByDesc("id");
+        List<User> users = userMapper.selectList(queryWrapper);
+        System.out.println(users);
+
+
+

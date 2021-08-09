@@ -1,0 +1,32 @@
+
+#项目端口号
+server:
+  port: 8001
+
+#Spring配置
+spring:
+  #数据库连接
+  datasource:
+    url: jdbc:mysql://localhost:3306/mybatis_plus?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=GMT%2B8
+    username: root
+    password: yuzhijie1218
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+#MyBaits Plus配置
+mybatis:
+  configuration:
+  map-underscore-to-camel-case: true
+  auto-mapping-behavior: full
+  call-setters-on-nulls: true
+  log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  #匹配路径
+  mapper-locations: classpath*:mapper/**/*Mapper.xml
+  global-config:
+    # 逻辑删除配置
+    db-config:
+      # 删除前
+      logic-not-delete-value: 1
+      # 删除后
+      logic-delete-value: 0
+
+
